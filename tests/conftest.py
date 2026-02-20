@@ -51,6 +51,6 @@ def config():
 @pytest.fixture
 def client():
     flask_app.config["TESTING"] = True
-    flask_app.config["SECRET_KEY"] = "test-secret"
+    flask_app.config["SECRET_KEY"] = "test-secret"  # nosec B105
     with flask_app.test_client() as c:
         yield c

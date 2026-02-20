@@ -1,7 +1,6 @@
 """Unit tests for RetirementCalculator."""
 import pytest
 from app import RetirementCalculator
-from tests.conftest import MINIMAL_CONFIG
 
 
 @pytest.fixture

@@ -1,6 +1,5 @@
 """Integration tests for Flask routes."""
 import json
-import pytest
 from app import get_default_config
 from tests.conftest import MINIMAL_CONFIG
 
