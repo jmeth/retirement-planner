@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirement Planner - Results</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Retirement Planner Results</h1>
+            <a href="/" class="btn btn-link">← Back to Configuration</a>
+            {% if auth_enabled %}<a href="/logout" class="logout-link">Sign out</a>{% endif %}
+        </header>
+
+        <!-- Summary Dashboard -->
+        <section class="dashboard">
+            <h2>Scenario Comparison</h2>
+            
+            <div class="scenario-selector">
+                <label>View Scenario:</label>
+                <select id="scenario-select">
+                    <option value="expected">Expected Case</option>
+                    <option value="best">Best Case (+1 Std Dev)</option>
+                    <option value="worst">Worst Case (-1 Std Dev)</option>
+                </select>
+            </div>
+
+            <div id="summary-table"></div>
+        </section>
+
+        <!-- Detailed Projections -->
+        <section class="projections">
+            <h2>Detailed Year-by-Year Projections</h2>
+            
+            <div class="projection-controls">
+                <div class="form-group">
+                    <label for="retirement-age-select">Retirement Age:</label>
+                    <select id="retirement-age-select"></select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="scenario-detail-select">Scenario:</label>
+                    <select id="scenario-detail-select">
+                        <option value="expected">Expected</option>
+                        <option value="best">Best Case</option>
+                        <option value="worst">Worst Case</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="portfolio-chart"></canvas>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="income-chart"></canvas>
+            </div>
+
+            <div class="table-container">
+                <table id="projection-table">
+                    <thead>
+                        <tr>
+                            <th>Year</th>
+                            <th>Age</th>
+                            <th>Total Portfolio</th>
+                            <th>Annual Withdrawal</th>
+                            <th>SS Income</th>
+                            <th>RE Income</th>
+                            <th>Total Income</th>
+                        </tr>
+                    </thead>
+                    <tbody id="projection-table-body"></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Key Insights -->
+        <section class="insights">
+            <h2>Key Insights</h2>
+            <div id="insights-content"></div>
+        </section>
+    </div>
+
+    <script src="/static/js/results.js"></script>
+</body>
+</html>

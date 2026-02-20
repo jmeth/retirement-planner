@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Retirement Planner - Configuration</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>💰 Retirement Planner</h1>
+            <p class="subtitle">Plan your financial future with confidence</p>
+            {% if auth_enabled %}<a href="/logout" class="logout-link">Sign out</a>{% endif %}
+        </header>
+
+        <div class="profile-bar">
+            <div class="profile-bar-left">
+                <label>Profile:</label>
+                <select id="profile-select">
+                    <option value="">-- saved profiles --</option>
+                </select>
+                <button type="button" class="btn btn-secondary btn-sm" id="load-profile-btn">Load</button>
+                <button type="button" class="btn btn-link btn-sm danger" id="delete-profile-btn">Delete</button>
+            </div>
+            <div class="profile-bar-right">
+                <input type="text" id="profile-name" placeholder="Profile name…">
+                <button type="button" class="btn btn-secondary btn-sm" id="save-profile-btn">Save as Profile</button>
+            </div>
+        </div>
+
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="personal">Personal Info</button>
+            <button class="tab-btn" data-tab="accounts">Accounts</button>
+            <button class="tab-btn" data-tab="milestones">Investment Strategy</button>
+            <button class="tab-btn" data-tab="events">Life Events</button>
+        </div>
+
+        <form id="config-form">
+            <!-- Personal Information Tab -->
+            <div class="tab-content active" id="personal-tab">
+                <h2>Personal Information</h2>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="current_age">Current Age</label>
+                        <input type="number" id="current_age" name="current_age" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="life_expectancy">Life Expectancy</label>
+                        <input type="number" id="life_expectancy" name="life_expectancy" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ss_start_age">Social Security Start Age</label>
+                        <input type="number" id="ss_start_age" name="ss_start_age" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="ss_annual">Annual Social Security ($)</label>
+                        <input type="number" id="ss_annual" name="ss_annual" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="salary">Annual Salary ($)</label>
+                        <input type="number" id="salary" name="salary" required>
+                        <small>Used to calculate employer 401k match</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="inflation_rate">Inflation Rate (%)</label>
+                        <input type="number" id="inflation_rate" name="inflation_rate" step="0.1" required>
+                        <small>Annual inflation rate for adjusting contributions, withdrawals, and SS</small>
+                    </div>
+                    <div class="form-group">
+                        <label for="target_retirement_income">Target Annual Retirement Income ($)</label>
+                        <input type="number" id="target_retirement_income" name="target_retirement_income">
+                        <small>Set to 0 to use the 4% rule instead</small>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="retirement_ages">Retirement Ages to Model (comma-separated)</label>
+                    <input type="text" id="retirement_ages" name="retirement_ages" placeholder="e.g., 55, 60, 65, 67" required>
+                    <small>Enter the ages you want to compare (e.g., 55, 60, 65, 67)</small>
+                </div>
+            </div>
+
+            <!-- Accounts Tab -->
+            <div class="tab-content" id="accounts-tab">
+                <h2>Account Setup</h2>
+                <p class="help-text">Define your investment accounts and contribution plans</p>
+                
+                <div id="accounts-container"></div>
+                
+                <button type="button" class="btn btn-secondary" id="add-account">+ Add Account</button>
+            </div>
+
+            <!-- Milestones Tab -->
+            <div class="tab-content" id="milestones-tab">
+                <h2>Investment Return Milestones</h2>
+                <p class="help-text">Define how your investment returns change as you approach retirement</p>
+                
+                <div id="milestones-container"></div>
+            </div>
+
+            <!-- Events Tab -->
+            <div class="tab-content" id="events-tab">
+                <h2>One-Time Life Events</h2>
+                <p class="help-text">Add major income events (bonuses, inheritance) or expenses (college, home purchase)</p>
+                
+                <div id="events-container"></div>
+                
+                <button type="button" class="btn btn-secondary" id="add-event">+ Add Event</button>
+            </div>
+        </form>
+
+        <div class="action-bar">
+            <button type="button" class="btn btn-link" id="reset-btn">Reset to Defaults</button>
+            <div>
+                <button type="button" class="btn btn-secondary" id="save-btn">Save Configuration</button>
+                <button type="button" class="btn btn-primary" id="calculate-btn">Calculate Results</button>
+            </div>
+        </div>
+
+        <div id="loading" class="loading" style="display: none;">
+            <div class="spinner"></div>
+            <p>Calculating your retirement scenarios...</p>
+        </div>
+    </div>
+
+    <script src="/static/js/config.js"></script>
+</body>
+</html>
