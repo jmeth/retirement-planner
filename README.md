@@ -12,6 +12,17 @@ A web-based retirement planning tool built with Flask. Model multiple retirement
 - **Age-based withdrawal strategy** — avoids early-withdrawal penalties before 59.5
 - **Optional authentication** — protect the app with a username/password when hosting publicly
 
+## Screenshots
+
+**Configuration**
+![Configuration page](img/config.png)
+
+**Results — Scenario Summary**
+![Results summary](img/results-summary.png)
+
+**Results — Year-by-Year Chart**
+![Results chart](img/results-chart.png)
+
 ## Running Locally
 
 ```bash
