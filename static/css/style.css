@@ -343,6 +343,15 @@ header h1 {
     font-size: 1.2rem;
 }
 
+/* Disclaimer banner */
+.disclaimer {
+    background: #fff8e1;
+    border-left: 4px solid var(--warning);
+    color: #6d4c00;
+    font-size: 0.875rem;
+    padding: 0.75rem 1.25rem;
+}
+
 /* Results Page */
 .dashboard {
     padding: 2rem;
