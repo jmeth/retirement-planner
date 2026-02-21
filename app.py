@@ -8,6 +8,7 @@ from collections import defaultdict
 from functools import wraps
 import os
 import secrets
+from urllib.parse import urlparse
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', secrets.token_hex(16))
@@ -412,6 +413,11 @@ def login():
                 request.form.get('password') == AUTH_PASS):
             session['logged_in'] = True
             next_page = request.args.get('next') or url_for('index')
+            # Validate that next_page is a local relative URL to prevent open redirects
+            next_page = next_page.replace('\\', '')
+            parsed = urlparse(next_page)
+            if parsed.scheme or parsed.netloc:
+                next_page = url_for('index')
             return redirect(next_page)
         error = 'Invalid username or password.'
     return render_template('login.html', error=error)
