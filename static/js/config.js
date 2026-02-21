@@ -1,5 +1,7 @@
 // Configuration page JavaScript
 
+const DEFAULT_PROFILE = 'default';
+
 let config = null;
 
 // Initialize
@@ -8,17 +10,23 @@ document.addEventListener('DOMContentLoaded', async () => {
     setupTabs();
     setupEventListeners();
     renderForm();
-    renderProfileSelect();
+    renderProfilesMenu();
 });
 
 async function loadConfig() {
-    // Try localStorage first, fall back to server default
-    const saved = localStorage.getItem('retirement_config');
-    if (saved) {
-        config = JSON.parse(saved);
+    const profiles = getProfiles();
+    const active = getActiveProfile();
+
+    if (profiles[active]) {
+        config = JSON.parse(JSON.stringify(profiles[active]));
     } else {
-        const response = await fetch('/api/config');
-        config = await response.json();
+        // Migrate legacy localStorage or fall back to server default
+        const legacy = localStorage.getItem('retirement_config');
+        config = legacy ? JSON.parse(legacy) : await (await fetch('/api/config')).json();
+        // Seed the default profile
+        profiles[DEFAULT_PROFILE] = JSON.parse(JSON.stringify(config));
+        saveProfiles(profiles);
+        setActiveProfile(DEFAULT_PROFILE);
     }
 }
 
@@ -43,12 +51,20 @@ function setupTabs() {
 function setupEventListeners() {
     document.getElementById('add-account').addEventListener('click', addAccount);
     document.getElementById('add-event').addEventListener('click', addEvent);
-    document.getElementById('save-btn').addEventListener('click', saveConfig);
     document.getElementById('calculate-btn').addEventListener('click', calculateResults);
     document.getElementById('reset-btn').addEventListener('click', resetConfig);
-    document.getElementById('save-profile-btn').addEventListener('click', saveProfile);
-    document.getElementById('load-profile-btn').addEventListener('click', loadProfile);
-    document.getElementById('delete-profile-btn').addEventListener('click', deleteProfile);
+    document.getElementById('profiles-btn').addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleProfilesMenu();
+    });
+    document.getElementById('save-profile-btn').addEventListener('click', saveCurrentProfile);
+    document.getElementById('saveas-profile-btn').addEventListener('click', saveAsNewProfile);
+    document.getElementById('delete-profile-btn').addEventListener('click', deleteCurrentProfile);
+    document.addEventListener('click', (e) => {
+        if (!document.getElementById('profiles-menu').contains(e.target)) {
+            closeProfilesMenu();
+        }
+    });
 }
 
 // --- Profile management ---
@@ -61,56 +77,102 @@ function saveProfiles(profiles) {
     localStorage.setItem('retirement_profiles', JSON.stringify(profiles));
 }
 
-function renderProfileSelect() {
-    const select = document.getElementById('profile-select');
-    const current = select.value;
+function getActiveProfile() {
+    return localStorage.getItem('retirement_active_profile') || DEFAULT_PROFILE;
+}
+
+function setActiveProfile(name) {
+    localStorage.setItem('retirement_active_profile', name);
+}
+
+function toggleProfilesMenu() {
+    const dropdown = document.getElementById('profiles-dropdown');
+    if (dropdown.style.display === 'none') {
+        renderProfilesMenu();
+        dropdown.style.display = 'block';
+    } else {
+        closeProfilesMenu();
+    }
+}
+
+function closeProfilesMenu() {
+    document.getElementById('profiles-dropdown').style.display = 'none';
+}
+
+function renderProfilesMenu() {
     const profiles = getProfiles();
-    select.innerHTML = '<option value="">-- saved profiles --</option>';
-    Object.keys(profiles).sort().forEach(name => {
-        const opt = document.createElement('option');
-        opt.value = name;
-        opt.textContent = name;
-        if (name === current) opt.selected = true;
-        select.appendChild(opt);
+    const active = getActiveProfile();
+    const list = document.getElementById('profiles-list');
+    list.innerHTML = '';
+
+    Object.keys(profiles).sort((a, b) => {
+        if (a === DEFAULT_PROFILE) return -1;
+        if (b === DEFAULT_PROFILE) return 1;
+        return a.localeCompare(b);
+    }).forEach(name => {
+        const item = document.createElement('button');
+        item.type = 'button';
+        item.className = 'dropdown-item' + (name === active ? ' active' : '');
+        item.textContent = name === DEFAULT_PROFILE ? 'Default' : name;
+        item.addEventListener('click', () => switchProfile(name));
+        list.appendChild(item);
     });
+
+    document.getElementById('active-profile-label').textContent =
+        active === DEFAULT_PROFILE ? 'Default' : active;
+
+    // Can't delete the default profile
+    document.getElementById('delete-profile-btn').style.display =
+        active === DEFAULT_PROFILE ? 'none' : 'block';
 }
 
-function saveProfile() {
-    const name = document.getElementById('profile-name').value.trim();
-    if (!name) { alert('Enter a profile name first.'); return; }
-
-    // Snapshot current form state into config before saving
-    collectFormIntoConfig();
-
+function switchProfile(name) {
     const profiles = getProfiles();
-    const isNew = !profiles[name];
-    profiles[name] = JSON.parse(JSON.stringify(config));
-    saveProfiles(profiles);
-    renderProfileSelect();
-    document.getElementById('profile-select').value = name;
-    document.getElementById('profile-name').value = '';
-    alert(isNew ? `Profile "${name}" saved.` : `Profile "${name}" updated.`);
-}
-
-function loadProfile() {
-    const name = document.getElementById('profile-select').value;
-    if (!name) { alert('Select a profile to load.'); return; }
-    const profiles = getProfiles();
-    if (!profiles[name]) { alert('Profile not found.'); return; }
+    if (!profiles[name]) return;
     config = JSON.parse(JSON.stringify(profiles[name]));
-    localStorage.setItem('retirement_config', JSON.stringify(config));
+    setActiveProfile(name);
     renderForm();
-    alert(`Profile "${name}" loaded.`);
+    renderProfilesMenu();
+    closeProfilesMenu();
 }
 
-function deleteProfile() {
-    const name = document.getElementById('profile-select').value;
-    if (!name) { alert('Select a profile to delete.'); return; }
-    if (!confirm(`Delete profile "${name}"?`)) return;
+function saveCurrentProfile() {
+    collectFormIntoConfig();
+    const active = getActiveProfile();
     const profiles = getProfiles();
-    delete profiles[name];
+    profiles[active] = JSON.parse(JSON.stringify(config));
     saveProfiles(profiles);
-    renderProfileSelect();
+    closeProfilesMenu();
+}
+
+function saveAsNewProfile() {
+    const name = prompt('Profile name:');
+    if (!name || !name.trim()) return;
+    const trimmed = name.trim();
+    if (trimmed.toLowerCase() === DEFAULT_PROFILE) {
+        alert('"default" is a reserved profile name.');
+        return;
+    }
+    collectFormIntoConfig();
+    const profiles = getProfiles();
+    profiles[trimmed] = JSON.parse(JSON.stringify(config));
+    saveProfiles(profiles);
+    setActiveProfile(trimmed);
+    renderProfilesMenu();
+    closeProfilesMenu();
+}
+
+function deleteCurrentProfile() {
+    const active = getActiveProfile();
+    if (!confirm(`Delete profile "${active}"?`)) return;
+    const profiles = getProfiles();
+    delete profiles[active];
+    saveProfiles(profiles);
+    setActiveProfile(DEFAULT_PROFILE);
+    config = JSON.parse(JSON.stringify(profiles[DEFAULT_PROFILE]));
+    renderForm();
+    renderProfilesMenu();
+    closeProfilesMenu();
 }
 
 // Pull personal-info fields from the DOM into config (same logic as saveConfig, minus the server call)
@@ -432,46 +494,44 @@ function addEvent() {
 
 async function saveConfig() {
     collectFormIntoConfig();
-    
-    // Save to localStorage for persistence across sessions
-    localStorage.setItem('retirement_config', JSON.stringify(config));
 
-    // Also save to server session for calculations
+    // Persist to active profile
+    const active = getActiveProfile();
+    const profiles = getProfiles();
+    profiles[active] = JSON.parse(JSON.stringify(config));
+    saveProfiles(profiles);
+
     const response = await fetch('/api/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(config)
     });
 
-    const result = await response.json();
-    alert('Configuration saved successfully!');
+    if (!response.ok) {
+        alert('Error saving configuration. Please try again.');
+        return false;
+    }
+    return true;
 }
 
 async function calculateResults() {
-    await saveConfig();
-    
+    const saved = await saveConfig();
+    if (!saved) return;
+
     document.getElementById('loading').style.display = 'flex';
-    
-    const response = await fetch('/api/calculate', {
-        method: 'POST'
-    });
-    
+
+    const response = await fetch('/api/calculate', { method: 'POST' });
     const results = await response.json();
-    
-    // Store results in sessionStorage
+
     sessionStorage.setItem('results', JSON.stringify(results));
-    
-    // Redirect to results page
     window.location.href = '/results';
 }
 
 async function resetConfig() {
-    if (confirm('Are you sure you want to reset to default configuration? This will erase all your changes.')) {
-        localStorage.removeItem('retirement_config');
-        const response = await fetch('/api/reset', { method: 'POST' });
-        const result = await response.json();
-        config = result.config;
-        renderForm();
-        alert('Configuration reset to defaults');
-    }
+    if (!confirm('Restore factory defaults? Your saved profiles will not be affected.')) return;
+    closeProfilesMenu();
+    const response = await fetch('/api/reset', { method: 'POST' });
+    const result = await response.json();
+    config = result.config;
+    renderForm();
 }
